@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">FitFoody</string>
+
+    <string name="snap">Scan Food</string>
+    <string name="action_menu">Menu</string>
+    <string name="action_stats">Stats</string>
+    <string name="action_history">History</string>
+    <string name="action_foodBios">Food Bios</string>
+
+</resources>
