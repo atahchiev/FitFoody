@@ -3,15 +3,19 @@ package nl.tiltekstwerk.fitfoody;
 import android.app.Activity;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.hardware.Camera.PictureCallback;
+
+import com.googlecode.tesseract.android.TessBaseAPI;
 import com.melnykov.fab.FloatingActionButton;
 import android.hardware.Camera.ShutterCallback;
 import android.view.View;
@@ -32,6 +36,33 @@ import butterknife.InjectView;
  */
 public class CameraActivity extends AppCompatActivity implements SurfaceHolder.Callback{
 
+
+
+    public String detectText(Bitmap bitmap) {
+
+        TessDataManager.initTessTrainedData(context);
+        TessBaseAPI tessBaseAPI = new TessBaseAPI();
+
+        String path = "/mnt/sdcard/packagename/tessdata/eng.traineddata";
+
+        tessBaseAPI.setDebug(true);
+        tessBaseAPI.init(path, "eng"); //Init the Tess with the trained data file, with english language
+
+        //For example if we want to only detect numbers
+        tessBaseAPI.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, "1234567890");
+        tessBaseAPI.setVariable(TessBaseAPI.VAR_CHAR_BLACKLIST, "!@#$%^&*()_+=-qwertyuiop[]}{POIU" +
+                "YTREWQasdASDfghFGHjklJKLl;L:'\"\\|~`xcvXCVbnmBNM,./<>?");
+
+
+        tessBaseAPI.setImage(bitmap);
+
+        String text = tessBaseAPI.getUTF8Text();
+
+        Log.d(TAG, "Got data: " + result);
+        tessBaseAPI.end();
+
+        return text;
+    }
     Camera camera;
     @InjectView(R.id.surfaceView)
     SurfaceView surfaceView;
