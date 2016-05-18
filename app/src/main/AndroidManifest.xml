@@ -24,6 +24,8 @@
         <activity android:name=".HistoryActivity"></activity>
         <activity android:name=".SettingsActivity"></activity>
 
+
+        <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     </application>
 
 </manifest>

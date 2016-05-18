@@ -3,7 +3,9 @@ package nl.tiltekstwerk.fitfoody;
 import android.app.Activity;
 
 import android.content.Intent;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 import android.net.Uri;
 import android.os.Bundle;
@@ -25,6 +27,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -37,16 +41,26 @@ import butterknife.InjectView;
 public class CameraActivity extends AppCompatActivity implements SurfaceHolder.Callback{
 
 
+    Camera camera;
+    @InjectView(R.id.surfaceView)
+    SurfaceView surfaceView;
+    @InjectView(R.id.btn_take_photo)
+    FloatingActionButton btn_take_photo;
+    SurfaceHolder surfaceHolder;
+    PictureCallback jpegCallback;
+    ShutterCallback shutterCallback;
+    public static final String DATA_PATH = Environment.getExternalStorageDirectory().toString() + "/AndroidOCRData/";
+    public static final String lang = "eng";
+    private static final String TAG = "Camera.java";
 
     public String detectText(Bitmap bitmap) {
 
-        TessDataManager.initTessTrainedData(context);
         TessBaseAPI tessBaseAPI = new TessBaseAPI();
 
-        String path = "/mnt/sdcard/packagename/tessdata/eng.traineddata";
+
 
         tessBaseAPI.setDebug(true);
-        tessBaseAPI.init(path, "eng"); //Init the Tess with the trained data file, with english language
+        tessBaseAPI.init(DATA_PATH, "eng"); //Init the Tess with the trained data file, with english language
 
         //For example if we want to only detect numbers
         tessBaseAPI.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, "1234567890");
@@ -58,21 +72,27 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
 
         String text = tessBaseAPI.getUTF8Text();
 
-        Log.d(TAG, "Got data: " + result);
+
         tessBaseAPI.end();
 
         return text;
     }
-    Camera camera;
-    @InjectView(R.id.surfaceView)
-    SurfaceView surfaceView;
-    @InjectView(R.id.btn_take_photo)
-    FloatingActionButton btn_take_photo;
-    SurfaceHolder surfaceHolder;
-    PictureCallback jpegCallback;
-    ShutterCallback shutterCallback;
+
     @Override
     public void onCreate(Bundle savedInstanceState){
+        String[] paths = new String[] { DATA_PATH, DATA_PATH + "tessdata/" };
+        for (String path : paths) {
+            File dir = new File(path);
+            if (!dir.exists()) {
+                if (!dir.mkdirs()) {
+                    Log.v(TAG, "ERROR: Creation of directory " + path + " on sdcard failed");
+                    return;
+                } else {
+                    Log.v(TAG, "Created directory " + path + " on sdcard");
+                }
+            }
+
+        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.camera_activity);
         ButterKnife.inject(this);
@@ -82,6 +102,7 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
         surfaceHolder.addCallback(this);
         //deprecated settings, but required on android version prior to 3.0
         surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+
         btn_take_photo.setOnClickListener(new FloatingActionButton.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -89,6 +110,31 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
             }
         });
 
+        if (!(new File(DATA_PATH + "tessdata/" + lang + ".traineddata")).exists()) {
+            try {
+
+                AssetManager assetManager = getAssets();
+                InputStream in = assetManager.open("tessdata/" + lang + ".traineddata");
+                //GZIPInputStream gin = new GZIPInputStream(in);
+                OutputStream out = new FileOutputStream(DATA_PATH
+                        + "tessdata/" + lang + ".traineddata");
+
+                // Transfer bytes from in to out
+                byte[] buf = new byte[1024];
+                int len;
+                //while ((lenf = gin.read(buff)) > 0) {
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+                in.close();
+                //gin.close();
+                out.close();
+
+                Log.v(TAG, "Copied " + lang + " traineddata");
+            } catch (IOException e) {
+                Log.e(TAG, "Was unable to copy " + lang + " traineddata " + e.toString());
+            }
+        }
         jpegCallback=new PictureCallback() {
             @Override
             public void onPictureTaken(byte[] data, Camera camera) {
@@ -102,17 +148,20 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
                 String date=simpleDateFormat.format(new Date());
                 String photofile="Cam_Demo"+date+".jpg";
                 String file_name=file_image.getAbsolutePath()+"/"+photofile;
+                Bitmap bitmap = BitmapFactory.decodeFile(file_name);
                 File picfile=new File(file_name);
+                String textje = detectText(bitmap);
                 try{
                     outputStream=new FileOutputStream(picfile);
                     outputStream.write(data);
                     outputStream.close();
                 }catch (FileNotFoundException e){}
+
                 catch(IOException ex){}
                 finally {
 
                 }
-                Toast.makeText(getApplicationContext(), "Pciture saved",Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), textje,Toast.LENGTH_SHORT).show();
                 refreshCamera();
                 refreshGalery(picfile);
             }
