@@ -24,6 +24,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -39,29 +40,80 @@ import butterknife.InjectView;
  * Created by alexander on 3/30/2016.
  */
 public class CameraActivity extends AppCompatActivity implements SurfaceHolder.Callback{
-
-
     Camera camera;
     @InjectView(R.id.surfaceView)
     SurfaceView surfaceView;
     @InjectView(R.id.btn_take_photo)
     FloatingActionButton btn_take_photo;
     SurfaceHolder surfaceHolder;
+    private Bitmap bmp,bmp1;
     PictureCallback jpegCallback;
     ShutterCallback shutterCallback;
-    public static final String DATA_PATH = Environment.getExternalStorageDirectory().toString() + "/AndroidOCRData/";
-    public static final String lang = "eng";
-    private static final String TAG = "Camera.java";
+    private FileInputStream fis;
+    private BitmapFactory.Options o, o2;
+    public static final String DATA_PATH = "/data/data/nl.tiltekstwerk.fitfoody/";
+
+    private void copyData() throws IOException{
+        InputStream myInput = this.getAssets().open("eng.traineddata");
+
+        OutputStream myOutput = new FileOutputStream(DATA_PATH+"/eng.traineddata");
+        //transfer bytes from the inputfile to the outputfile
+        byte[] buffer = new byte[1024];
+        int length;
+        while ((length = myInput.read(buffer))>0){
+            myOutput.write(buffer, 0, length);
+        }
+
+        //Close the streams
+        myOutput.flush();
+        myOutput.close();
+        myInput.close();
+
+    }
+
+    public Bitmap decodeFile(File f) {
+        Bitmap b = null;
+        try {
+            // Decode image size
+            o = new BitmapFactory.Options();
+            o.inJustDecodeBounds = true;
+
+            fis = new FileInputStream(f);
+            BitmapFactory.decodeStream(fis, null, o);
+            fis.close();
+            int IMAGE_MAX_SIZE = 1000;
+            int scale = 1;
+            if (o.outHeight > IMAGE_MAX_SIZE || o.outWidth > IMAGE_MAX_SIZE) {
+                scale = (int) Math.pow(
+                        2,
+                        (int) Math.round(Math.log(IMAGE_MAX_SIZE
+                                / (double) Math.max(o.outHeight, o.outWidth))
+                                / Math.log(0.5)));
+            }
+
+            // Decode with inSampleSize
+            o2 = new BitmapFactory.Options();
+            o2.inSampleSize = scale;
+            fis = new FileInputStream(f);
+            b = BitmapFactory.decodeStream(fis, null, o2);
+            fis.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return b;
+    }
+
 
     public String detectText(Bitmap bitmap) {
 
+
         TessBaseAPI tessBaseAPI = new TessBaseAPI();
-
-
-
         tessBaseAPI.setDebug(true);
-        tessBaseAPI.init(DATA_PATH, "eng"); //Init the Tess with the trained data file, with english language
 
+
+        tessBaseAPI.init(DATA_PATH, "eng"); //Init the Tess with the trained data file, with english language
         //For example if we want to only detect numbers
         tessBaseAPI.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, "1234567890");
         tessBaseAPI.setVariable(TessBaseAPI.VAR_CHAR_BLACKLIST, "!@#$%^&*()_+=-qwertyuiop[]}{POIU" +
@@ -73,6 +125,7 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
         String text = tessBaseAPI.getUTF8Text();
 
 
+
         tessBaseAPI.end();
 
         return text;
@@ -80,29 +133,22 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
 
     @Override
     public void onCreate(Bundle savedInstanceState){
-        String[] paths = new String[] { DATA_PATH, DATA_PATH + "tessdata/" };
-        for (String path : paths) {
-            File dir = new File(path);
-            if (!dir.exists()) {
-                if (!dir.mkdirs()) {
-                    Log.v(TAG, "ERROR: Creation of directory " + path + " on sdcard failed");
-                    return;
-                } else {
-                    Log.v(TAG, "Created directory " + path + " on sdcard");
-                }
-            }
-
-        }
         super.onCreate(savedInstanceState);
+        try {
+            copyData();
+        }
+        catch(Exception e){
+            Log.e("FUCK JAVAAAAAAAA", e.toString());
+        }
         setContentView(R.layout.camera_activity);
         ButterKnife.inject(this);
+//        copyAssets();
         surfaceHolder=surfaceView.getHolder();
         //install a surfaceHolder.callBack so we get notified when the
         // underlying surface is created and destroyed;
         surfaceHolder.addCallback(this);
         //deprecated settings, but required on android version prior to 3.0
         surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-
         btn_take_photo.setOnClickListener(new FloatingActionButton.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -110,36 +156,12 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
             }
         });
 
-        if (!(new File(DATA_PATH + "tessdata/" + lang + ".traineddata")).exists()) {
-            try {
-
-                AssetManager assetManager = getAssets();
-                InputStream in = assetManager.open("tessdata/" + lang + ".traineddata");
-                //GZIPInputStream gin = new GZIPInputStream(in);
-                OutputStream out = new FileOutputStream(DATA_PATH
-                        + "tessdata/" + lang + ".traineddata");
-
-                // Transfer bytes from in to out
-                byte[] buf = new byte[1024];
-                int len;
-                //while ((lenf = gin.read(buff)) > 0) {
-                while ((len = in.read(buf)) > 0) {
-                    out.write(buf, 0, len);
-                }
-                in.close();
-                //gin.close();
-                out.close();
-
-                Log.v(TAG, "Copied " + lang + " traineddata");
-            } catch (IOException e) {
-                Log.e(TAG, "Was unable to copy " + lang + " traineddata " + e.toString());
-            }
-        }
         jpegCallback=new PictureCallback() {
             @Override
             public void onPictureTaken(byte[] data, Camera camera) {
                 FileOutputStream outputStream=null;
                 File file_image=getDirc();
+
                 if (!file_image.exists() && !file_image.mkdirs()){
                     Toast.makeText(getApplicationContext(), "Can't create dir to save", Toast.LENGTH_SHORT).show();
                     return;
@@ -148,24 +170,26 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
                 String date=simpleDateFormat.format(new Date());
                 String photofile="Cam_Demo"+date+".jpg";
                 String file_name=file_image.getAbsolutePath()+"/"+photofile;
-                Bitmap bitmap = BitmapFactory.decodeFile(file_name);
+                Bitmap bmp = BitmapFactory.decodeByteArray(data , 0, data .length);
+                String text = detectText(bmp);
                 File picfile=new File(file_name);
-                String textje = detectText(bitmap);
                 try{
                     outputStream=new FileOutputStream(picfile);
                     outputStream.write(data);
                     outputStream.close();
                 }catch (FileNotFoundException e){}
-
                 catch(IOException ex){}
                 finally {
 
                 }
-                Toast.makeText(getApplicationContext(), textje,Toast.LENGTH_SHORT).show();
+
+                Toast.makeText(getApplicationContext(), "picture taken",Toast.LENGTH_SHORT).show();
                 refreshCamera();
                 refreshGalery(picfile);
             }
         };
+
+
     }
     //refresh gallery
     private void refreshGalery(File file){
@@ -194,9 +218,10 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
         }catch(Exception e){}
 
     }
+
     private File getDirc(){
         File dics= Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
-        return  new File(dics, "Camera demo");
+        return new File(dics, "Camera demo");
     }
     public void cameraImage(){
         //take the picture
@@ -232,7 +257,7 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-    //stop preview and release camera
+        //stop preview and release camera
         camera.stopPreview();
         camera.release();
         camera=null;
