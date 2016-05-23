@@ -2,7 +2,9 @@ package nl.tiltekstwerk.fitfoody;
 
 import android.app.Activity;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -10,6 +12,7 @@ import android.hardware.Camera;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -52,24 +55,6 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
     private FileInputStream fis;
     private BitmapFactory.Options o, o2;
     public static final String DATA_PATH = "/data/data/nl.tiltekstwerk.fitfoody/";
-
-    private void copyData() throws IOException{
-        InputStream myInput = this.getAssets().open("eng.traineddata");
-
-        OutputStream myOutput = new FileOutputStream(DATA_PATH+"/eng.traineddata");
-        //transfer bytes from the inputfile to the outputfile
-        byte[] buffer = new byte[1024];
-        int length;
-        while ((length = myInput.read(buffer))>0){
-            myOutput.write(buffer, 0, length);
-        }
-
-        //Close the streams
-        myOutput.flush();
-        myOutput.close();
-        myInput.close();
-
-    }
 
     public Bitmap decodeFile(File f) {
         Bitmap b = null;
@@ -134,12 +119,7 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
     @Override
     public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
-        try {
-            copyData();
-        }
-        catch(Exception e){
-            Log.e("FUCK JAVAAAAAAAA", e.toString());
-        }
+
         setContentView(R.layout.camera_activity);
         ButterKnife.inject(this);
 //        copyAssets();
