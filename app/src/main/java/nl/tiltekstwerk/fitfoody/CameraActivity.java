@@ -57,6 +57,7 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
     public static final String DATA_PATH = Environment.getExternalStorageDirectory() + "/DCIM/";
 
 
+
     private void copyData() throws IOException{
         File tess_data_dir = null;
         if (!getDirc("tessdata").mkdir()) {
@@ -84,6 +85,7 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
         myInput.close();
 
     }
+
 
     public Bitmap decodeFile(File f) {
         Bitmap b = null;
