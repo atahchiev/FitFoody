@@ -2,7 +2,9 @@ package nl.tiltekstwerk.fitfoody;
 
 import android.app.Activity;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -10,6 +12,7 @@ import android.hardware.Camera;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -51,12 +54,23 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
     ShutterCallback shutterCallback;
     private FileInputStream fis;
     private BitmapFactory.Options o, o2;
-    public static final String DATA_PATH = "/data/data/nl.tiltekstwerk.fitfoody/";
+    public static final String DATA_PATH = Environment.getExternalStorageDirectory() + "/DCIM/";
+
 
     private void copyData() throws IOException{
+        File tess_data_dir = null;
+        if (!getDirc("tessdata").mkdir()) {
+            tess_data_dir = getDirc("tessdata");
+            tess_data_dir.mkdir();
+        }
+        else{
+            tess_data_dir=getDirc("tessdata");
+        }
+
+
         InputStream myInput = this.getAssets().open("eng.traineddata");
 
-        OutputStream myOutput = new FileOutputStream(DATA_PATH+"/eng.traineddata");
+        OutputStream myOutput = new FileOutputStream(tess_data_dir.getAbsolutePath()+"/eng.traineddata");
         //transfer bytes from the inputfile to the outputfile
         byte[] buffer = new byte[1024];
         int length;
@@ -74,6 +88,7 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
     public Bitmap decodeFile(File f) {
         Bitmap b = null;
         try {
+
             // Decode image size
             o = new BitmapFactory.Options();
             o.inJustDecodeBounds = true;
@@ -116,8 +131,8 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
         tessBaseAPI.init(DATA_PATH, "eng"); //Init the Tess with the trained data file, with english language
         //For example if we want to only detect numbers
         tessBaseAPI.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, "1234567890");
-        tessBaseAPI.setVariable(TessBaseAPI.VAR_CHAR_BLACKLIST, "!@#$%^&*()_+=-qwertyuiop[]}{POIU" +
-                "YTREWQasdASDfghFGHjklJKLl;L:'\"\\|~`xcvXCVbnmBNM,./<>?");
+//        tessBaseAPI.setVariable(TessBaseAPI.VAR_CHAR_BLACKLIST, "!@#$%^&*()_+=-qwertyuiop[]}{POIU" +
+//                "YTREWQasdASDfghFGHjklJKLl;L:'\"\\|~`xcvXCVbnmBNM,./<>?");
 
 
         tessBaseAPI.setImage(bitmap);
@@ -134,12 +149,7 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
     @Override
     public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
-        try {
-            copyData();
-        }
-        catch(Exception e){
-            Log.e("FUCK JAVAAAAAAAA", e.toString());
-        }
+
         setContentView(R.layout.camera_activity);
         ButterKnife.inject(this);
 //        copyAssets();
@@ -160,7 +170,7 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
             @Override
             public void onPictureTaken(byte[] data, Camera camera) {
                 FileOutputStream outputStream=null;
-                File file_image=getDirc();
+                File file_image=getDirc("Camera demo");
 
                 if (!file_image.exists() && !file_image.mkdirs()){
                     Toast.makeText(getApplicationContext(), "Can't create dir to save", Toast.LENGTH_SHORT).show();
@@ -170,7 +180,7 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
                 String date=simpleDateFormat.format(new Date());
                 String photofile="Cam_Demo"+date+".jpg";
                 String file_name=file_image.getAbsolutePath()+"/"+photofile;
-                Bitmap bmp = BitmapFactory.decodeByteArray(data , 0, data .length);
+                Bitmap bmp = BitmapFactory.decodeByteArray(data , 0, data.length);
                 String text = detectText(bmp);
                 File picfile=new File(file_name);
                 try{
@@ -183,7 +193,7 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
 
                 }
 
-                Toast.makeText(getApplicationContext(), "picture taken",Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), text,Toast.LENGTH_SHORT).show();
                 refreshCamera();
                 refreshGalery(picfile);
             }
@@ -219,9 +229,9 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
 
     }
 
-    private File getDirc(){
+    private File getDirc(String name){
         File dics= Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
-        return new File(dics, "Camera demo");
+        return new File(dics, name);
     }
     public void cameraImage(){
         //take the picture
