@@ -9,11 +9,51 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="nl.tiltekstwerk.fitfoody.MainActivity">
 
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:id="@+id/searchViews">
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:orientation="horizontal"
+            android:id="@+id/searchControls">
+
+            <EditText android:id="@+id/searchText"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:hint="@string/searchText" />
+            <Button android:id="@+id/buttonSearch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/buttonSearchText"
+                android:onClick="search" />
+        </LinearLayout>
+
+        <ListView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/searchResults"
+            android:divider="@color/colorPrimary"
+            android:dividerHeight="1dp">
+        </ListView>
+
+        <TextView android:id="@+id/noResults"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="No Results"
+            android:visibility="gone"/>
+    </LinearLayout>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Scan food"
-        android:id="@+id/textView" />
+        android:id="@+id/textView"
+        android:layout_above="@+id/openCameraActivity"/>
 
     <ImageButton
         android:layout_width="wrap_content"
@@ -21,7 +61,7 @@
         android:id="@+id/openCameraActivity"
         android:contentDescription="@string/snap"
         android:src="@drawable/banana"
-        android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
         />
 </RelativeLayout>
