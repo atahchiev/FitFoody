@@ -2,8 +2,10 @@ package nl.tiltekstwerk.fitfoody;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,5 +37,10 @@ public class Utils {
         }
 
         return false;
+    }
+
+    public static File getDirc(String name){
+        File dics= Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+        return new File(dics, name);
     }
 }

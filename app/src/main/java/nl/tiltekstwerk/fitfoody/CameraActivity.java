@@ -56,11 +56,6 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
     private BitmapFactory.Options o, o2;
     public static final String DATA_PATH = Environment.getExternalStorageDirectory() + "/DCIM/";
 
-    private void  createTessdataDir() {
-        File tess_data_dir = getDirc("tessdata");
-        tess_data_dir.mkdir();
-    }
-
     public Bitmap decodeFile(File f) {
         Bitmap b = null;
         try {
@@ -103,10 +98,11 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
         TessBaseAPI tessBaseAPI = new TessBaseAPI();
         tessBaseAPI.setDebug(true);
 
-
+        tessBaseAPI.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, "1234567890");
+        tessBaseAPI.setVariable(TessBaseAPI.VAR_CHAR_BLACKLIST,"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmopqrstuvwxyz");
         tessBaseAPI.init(DATA_PATH, "eng"); //Init the Tess with the trained data file, with english language
         //For example if we want to only detect numbers
-        tessBaseAPI.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, "1234567890");
+
 //        tessBaseAPI.setVariable(TessBaseAPI.VAR_CHAR_BLACKLIST, "!@#$%^&*()_+=-qwertyuiop[]}{POIU" +
 //                "YTREWQasdASDfghFGHjklJKLl;L:'\"\\|~`xcvXCVbnmBNM,./<>?");
 
@@ -126,7 +122,6 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
     public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
 
-        this.createTessdataDir();
         setContentView(R.layout.camera_activity);
         ButterKnife.inject(this);
 //        copyAssets();
@@ -147,7 +142,7 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
             @Override
             public void onPictureTaken(byte[] data, Camera camera) {
                 FileOutputStream outputStream=null;
-                File file_image=getDirc("Camera demo");
+                File file_image=Utils.getDirc("Camera demo");
 
                 if (!file_image.exists() && !file_image.mkdirs()){
                     Toast.makeText(getApplicationContext(), "Can't create dir to save", Toast.LENGTH_SHORT).show();
@@ -206,10 +201,6 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
 
     }
 
-    private File getDirc(String name){
-        File dics= Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
-        return new File(dics, name);
-    }
     public void cameraImage(){
         //take the picture
         camera.takePicture(null, null, jpegCallback);

@@ -18,6 +18,8 @@ import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
+import java.io.File;
+
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 
@@ -70,12 +72,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        try {
-            Utils.copyData(this, DATA_PATH, "eng.traineddata");
-        }
-        catch(Exception e){
-            Log.e("FUCK JAVAAAAAAAA", e.toString());
-        }
+        this.createTessdataDir();
 
         // Updates the db if needed when the app is opened for first time.
         this.db = this.dbHelper.getDatabase();
@@ -100,6 +97,18 @@ public class MainActivity extends AppCompatActivity {
 
         Cursor cursor = this.db.rawQuery(sql, selectionArgs);
         return cursor;
+    }
+
+    private void  createTessdataDir() {
+        File tess_data_dir = Utils.getDirc("tessdata");
+        tess_data_dir.mkdir();
+
+        try {
+            Utils.copyData(this, tess_data_dir.getAbsolutePath() + "/", "eng.traineddata");
+        }
+        catch(Exception e){
+            Log.e("FUCK JAVAAAAAAAA", e.toString());
+        }
     }
 
     public static final String DATA_PATH = "/data/data/nl.tiltekstwerk.fitfoody/";
