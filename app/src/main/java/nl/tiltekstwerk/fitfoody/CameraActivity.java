@@ -56,36 +56,10 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
     private BitmapFactory.Options o, o2;
     public static final String DATA_PATH = Environment.getExternalStorageDirectory() + "/DCIM/";
 
-
-
-    private void copyData() throws IOException{
-        File tess_data_dir = null;
-        if (!getDirc("tessdata").mkdir()) {
-            tess_data_dir = getDirc("tessdata");
-            tess_data_dir.mkdir();
-        }
-        else{
-            tess_data_dir=getDirc("tessdata");
-        }
-
-
-        InputStream myInput = this.getAssets().open("eng.traineddata");
-
-        OutputStream myOutput = new FileOutputStream(tess_data_dir.getAbsolutePath()+"/eng.traineddata");
-        //transfer bytes from the inputfile to the outputfile
-        byte[] buffer = new byte[1024];
-        int length;
-        while ((length = myInput.read(buffer))>0){
-            myOutput.write(buffer, 0, length);
-        }
-
-        //Close the streams
-        myOutput.flush();
-        myOutput.close();
-        myInput.close();
-
+    private void  createTessdataDir() {
+        File tess_data_dir = getDirc("tessdata");
+        tess_data_dir.mkdir();
     }
-
 
     public Bitmap decodeFile(File f) {
         Bitmap b = null;
@@ -152,6 +126,7 @@ public class CameraActivity extends AppCompatActivity implements SurfaceHolder.C
     public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
 
+        this.createTessdataDir();
         setContentView(R.layout.camera_activity);
         ButterKnife.inject(this);
 //        copyAssets();
